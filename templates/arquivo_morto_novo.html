@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Novo registro · Arquivo Morto · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('arquivo_morto.index') }}">&larr; Arquivo Morto</a>
+<h1>Novo registro no Arquivo Morto</h1>
+<p class="muted">Para aluno de antes deste sistema existir, sem cadastro correspondente aqui. A letra e o
+  número são definidos automaticamente pelo nome (mesma organização por letra do resto do arquivo).</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Nome completo
+    <input type="text" name="nome" required autofocus>
+  </label>
+  <label style="margin-top:14px;">Data de nascimento (opcional)
+    <input type="date" name="data_nascimento">
+  </label>
+  <p class="muted small" style="margin:8px 0 0;">Se já existir um registro com o mesmo nome (e a mesma
+    data de nascimento, quando informada) na mesma letra, o sistema avisa e não cria duplicado.</p>
+  <button type="submit" class="button-grande" style="margin-top:18px;">Adicionar</button>
+</form>
+{% endblock %}

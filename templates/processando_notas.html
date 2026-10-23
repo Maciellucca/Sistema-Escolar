@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Lendo o PDF… · Sistema Escolar{% endblock %}
+{% block scripts %}
+{% if not demorando_muito %}<meta http-equiv="refresh" content="4">{% endif %}
+{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('importacao.notas_index') }}">&larr; Importações</a>
+<div class="auth-card" style="max-width:520px;">
+  {% if demorando_muito %}
+    <h1>Isso está demorando demais</h1>
+    <p class="muted" style="text-align:center;">
+      <strong>{{ lote['arquivo'] }}</strong><br>
+      {{ lote['ano'] }} · {{ lote['bimestre'] }}º bimestre · já se passaram {{ minutos }} minuto(s)
+    </p>
+    <p class="flash flash-erro" style="text-align:left;">
+      Depois de {{ minutos }} minutos, isso normalmente não é mais "só demorado" — é sinal de que a
+      leitura em segundo plano não está rodando de verdade neste servidor. Isso é comum em hospedagens
+      gratuitas (ex: plano <strong>Free do Render</strong>), que costumam suspender ou limitar
+      processamento fora do ciclo ativo de uma requisição. Confira os <strong>logs do servidor</strong> —
+      se não houver nenhuma linha começando com <code>[importacao] lote {{ lote['id'] }}</code>, é isso
+      mesmo. Considere um plano pago (com disco persistente e execução em segundo plano garantida) para
+      essa função funcionar de forma confiável.
+    </p>
+    <form method="post" action="{{ url_for('importacao.cancelar_travado', lote_id=lote['id']) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="button-grande" style="width:100%;">Cancelar esta importação</button>
+    </form>
+  {% else %}
+    <h1>Lendo o PDF…</h1>
+    <p class="muted" style="text-align:center;">
+      <strong>{{ lote['arquivo'] }}</strong><br>
+      {{ lote['ano'] }} · {{ lote['bimestre'] }}º bimestre
+    </p>
+    <p class="muted small" style="text-align:center;">
+      Isso roda em segundo plano e pode levar de 1 a 3 minutos em arquivos com
+      muitas páginas. Esta página atualiza sozinha a cada poucos segundos —
+      não precisa recarregar manualmente, e dá pra fechar e voltar depois
+      pela lista de importações.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

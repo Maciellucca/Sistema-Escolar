@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Resultado do envio de fotos · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ voltar_url or url_for('importacao.fotos_index') }}">&larr; {{ voltar_rotulo or 'Enviar mais fotos' }}</a>
+<h1>Resultado do envio de fotos</h1>
+
+<section class="panel">
+  <h2>Casadas com sucesso <span class="badge badge-ok">{{ casados|length }}</span></h2>
+  {% if casados %}
+  <table class="tabela-notas">
+    <thead><tr><th scope="col">Arquivo</th><th scope="col">Aluno</th><th scope="col">Turma</th><th scope="col">Como foi identificada</th></tr></thead>
+    <tbody>
+      {% for arquivo, nome, turma, observacao in casados %}
+      <tr><td>{{ arquivo }}</td><td>{{ nome }}</td><td>{{ turma }}</td><td class="small muted">{{ observacao }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma foto foi casada com sucesso nesse envio.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Pendentes <span class="badge badge-aviso">{{ nao_casados|length }}</span></h2>
+  {% if nao_casados %}
+  <p class="muted small">Esses arquivos não foram salvos — renomeie e envie de novo, ou suba manualmente
+    pela página do aluno.</p>
+  <table class="tabela-notas">
+    <thead><tr><th scope="col">Arquivo</th><th scope="col">Motivo</th></tr></thead>
+    <tbody>
+      {% for arquivo, motivo in nao_casados %}
+      <tr><td>{{ arquivo }}</td><td>{{ motivo }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma pendência — todas as fotos foram casadas.</p>
+  {% endif %}
+</section>
+{% endblock %}

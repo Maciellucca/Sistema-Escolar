@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Enviar fotos em lote · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('importacao.alunos_index') }}">&larr; Importar alunos</a>
+<h1>Enviar fotos em lote</h1>
+<p class="muted">Envie várias fotos de uma vez — o sistema identifica o aluno pelo <strong>nome do arquivo</strong>,
+  no padrão <strong>NOME DO ALUNO-EOL</strong> (EOL = código do aluno):</p>
+<p class="muted small" style="font-family:monospace;">AGATHA LIECK SANTOS-7584678.jpg</p>
+<ul class="muted small">
+  <li>O <strong>EOL</strong> identifica o aluno e o <strong>nome</strong> confere se é ele mesmo — se não bater, a foto
+    não é salva e aparece nas pendências (evita foto no aluno errado por EOL digitado errado).</li>
+  <li>Maiúsculas/minúsculas, acentos e "_"/"-" são ignorados; pequenas diferenças no nome (ex: faltando um
+    sobrenome) são aceitas quando o EOL confere.</li>
+  <li>Arquivo só com o nome (ex: <span style="font-family:monospace;">AGATHA LIECK SANTOS.jpg</span>) continua
+    funcionando, casando pelo nome — desde que não haja outro aluno com o mesmo nome.</li>
+</ul>
+
+<section class="panel">
+  <form method="post" action="{{ url_for('importacao.fotos_upload') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <label>Turma (opcional — filtra a busca e evita nome duplicado entre turmas)
+        <select name="turma">
+          <option value="">Todas as turmas</option>
+          {% for t in turmas %}
+          <option value="{{ t['turma'] }}">{{ t['turma'] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <label style="margin-top:14px;">Fotos (.jpg, .png ou .webp — pode selecionar várias de uma vez)
+      <input type="file" name="fotos" accept=".jpg,.jpeg,.png,.webp" multiple required>
+    </label>
+    <button type="submit" class="button-grande" style="margin-top:20px;">Enviar e casar com os alunos</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Lançar notas · {{ aluno['nome'] }}{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}">&larr; {{ aluno['nome_social'] or aluno['nome'] }}</a>
+<h1>Lançar notas manualmente</h1>
+<p class="muted">{{ aluno['nome_social'] or aluno['nome'] }} · turma {{ aluno['turma'] }}. Use quando o aluno não veio
+  na Ata Bimestral importada, ou para corrigir algum valor. Deixe a linha toda em branco para não lançar
+  (ou para apagar) aquele componente.</p>
+
+<form method="get" class="panel notas-periodo">
+  <label>Ano
+    <input type="number" name="ano" value="{{ ano }}" min="2000" max="2100" required>
+  </label>
+  <label>Bimestre
+    <select name="bimestre" data-auto-submit>
+      {% for b in (1, 2, 3, 4) %}<option value="{{ b }}"{% if b == bimestre %} selected{% endif %}>{{ b }}º bimestre</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="button-outline">Trocar</button>
+</form>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="ano" value="{{ ano }}">
+  <input type="hidden" name="bimestre" value="{{ bimestre }}">
+  <h2>{{ bimestre }}º bimestre de {{ ano }}</h2>
+  <div class="table-wrap">
+    <table class="tabela-notas-manuais">
+      <thead>
+        <tr><th>Componente</th><th>Faltas (F)</th><th>Compensações (CA)</th><th>Frequência (%)</th><th>Conceito (N/C)</th></tr>
+      </thead>
+      <tbody>
+        {% for d in disciplinas %}
+        {% set n = existentes.get(d) %}
+        <tr>
+          <td>{{ d }}{% if n and n['origem'] == 'manual' %} <span class="muted small">(manual)</span>{% endif %}</td>
+          <td><input type="number" name="faltas::{{ loop.index0 }}" min="0" max="999" value="{{ n['faltas'] if n and n['faltas'] is not none else '' }}" aria-label="Faltas em {{ d }}"></td>
+          <td><input type="number" name="comp::{{ loop.index0 }}" min="0" max="999" value="{{ n['compensacoes'] if n and n['compensacoes'] is not none else '' }}" aria-label="Compensações em {{ d }}"></td>
+          <td><input type="text" inputmode="decimal" name="freq::{{ loop.index0 }}" maxlength="6" placeholder="ex: 95" value="{{ ('%g'|format(n['frequencia'])) if n and n['frequencia'] is not none else '' }}" aria-label="Frequência em {{ d }}"></td>
+          <td>
+            <select name="conc::{{ loop.index0 }}" aria-label="Conceito em {{ d }}">
+              <option value="">—</option>
+              {% for c in conceitos %}<option{% if n and (n['conceito'] or '')|upper == c %} selected{% endif %}>{{ c }}</option>{% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="nova-disciplina">
+          <td><input type="text" name="nova_disciplina" maxlength="80" placeholder="Outro componente (opcional)" aria-label="Nome de outro componente"></td>
+          <td><input type="number" name="faltas::nova" min="0" max="999" aria-label="Faltas no outro componente"></td>
+          <td><input type="number" name="comp::nova" min="0" max="999" aria-label="Compensações no outro componente"></td>
+          <td><input type="text" inputmode="decimal" name="freq::nova" maxlength="6" aria-label="Frequência no outro componente"></td>
+          <td><select name="conc::nova" aria-label="Conceito no outro componente"><option value="">—</option>{% for c in conceitos %}<option>{{ c }}</option>{% endfor %}</select></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Conceito: P = Plenamente satisfatório · S = Satisfatório · NS = Não satisfatório.</p>
+  <button type="submit" class="button">Salvar notas</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll("[data-auto-submit]").forEach((el) => el.addEventListener("change", () => el.form.submit()));
+</script>
+{% endblock %}

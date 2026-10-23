@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Usuários da equipe · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+<h1>Usuários da equipe</h1>
+<p class="muted">As senhas não ficam guardadas de forma que possam ser lidas: o sistema só consegue conferir
+  se a senha digitada está certa. Para quem esqueceu, gere uma <strong>senha provisória</strong>. A pessoa entra
+  com ela e o sistema obriga a criar uma senha nova no primeiro acesso.</p>
+
+{% if senha_gerada %}
+<section class="panel senha-provisoria" role="status">
+  <h2>Senha provisória de {{ usuario_senha }}</h2>
+  <div class="senha-provisoria-linha">
+    <code class="senha-provisoria-valor">{{ senha_gerada }}</code>
+    <button type="button" class="button-outline" data-copiar="{{ senha_gerada }}">Copiar</button>
+  </div>
+  <p class="small">Passe essa senha para a pessoa (login: <strong>{{ usuario_senha }}</strong>). Ela aparece
+    <strong>só agora</strong>: ao sair desta página não é possível vê-la de novo, só gerar outra. No primeiro acesso a
+    pessoa vai criar a própria senha.</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Equipe</h2>
+  <div style="overflow-x:auto;">
+    <table class="tabela-notas">
+      <thead>
+        <tr><th scope="col">Nome</th><th scope="col">Login</th><th scope="col">Perfil</th><th scope="col">Setor</th>
+            <th scope="col">E-mail</th><th scope="col">Situação</th><th scope="col"></th></tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr{% if not u['ativo'] %} class="usuario-inativo"{% endif %}>
+          <td>{{ u['nome'] }}{% if u['id'] == user['id'] %} <span class="badge badge-muted">você</span>{% endif %}</td>
+          <td><code>{{ u['username'] }}</code></td>
+          <td>
+            {% if u['id'] == user['id'] %}
+            <span title="Você não pode mudar o seu próprio perfil">{{ rotulo_papel.get(u['papel'], u['papel']) }}</span>
+            {% else %}
+            <label class="sr-only" for="papel-{{ u['id'] }}">Perfil de {{ u['nome'] }}</label>
+            <select name="papel" id="papel-{{ u['id'] }}" form="editar-{{ u['id'] }}" class="usuario-campo" data-editar="{{ u['id'] }}">
+              {% for valor, rotulo in papeis %}
+              <option value="{{ valor }}"{% if u['papel'] == valor %} selected{% endif %}>{{ rotulo }}</option>
+              {% endfor %}
+              {% if u['papel'] not in papeis|map('first') %}
+              <option value="{{ u['papel'] }}" selected>{{ rotulo_papel.get(u['papel'], u['papel']) }}</option>
+              {% endif %}
+            </select>
+            {% endif %}
+          </td>
+          <td>
+            <label class="sr-only" for="setor-{{ u['id'] }}">Setor de {{ u['nome'] }}</label>
+            <input type="text" name="setor" id="setor-{{ u['id'] }}" form="editar-{{ u['id'] }}" class="usuario-campo"
+                   value="{{ u['setor'] or '' }}" maxlength="100" placeholder="—" data-editar="{{ u['id'] }}">
+          </td>
+          <td>{{ u['email'] or '—' }}</td>
+          <td>
+            {% if not u['ativo'] %}<span class="badge badge-muted">desativado</span>
+            {% elif u['trocar_senha'] %}<span class="badge badge-aviso" title="Ainda não trocou a senha provisória">senha provisória</span>
+            {% else %}ativo{% endif %}
+          </td>
+          <td>
+            <div class="usuario-acoes">
+              <form method="post" id="editar-{{ u['id'] }}" action="{{ url_for('staff.editar_usuario', usuario_id=u['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="button" data-salvar="{{ u['id'] }}">Salvar perfil e setor</button>
+              </form>
+            {% if u['id'] != user['id'] %}
+              <form method="post" action="{{ url_for('staff.senha_provisoria', usuario_id=u['id']) }}"
+                    onsubmit='return confirm({{ ("Gerar uma senha provisória para " ~ u["nome"] ~ "? A senha atual dessa pessoa deixa de funcionar.")|tojson }});'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="button-outline">Gerar senha provisória</button>
+              </form>
+              <form method="post" action="{{ url_for('staff.alternar_usuario_ativo', usuario_id=u['id']) }}"
+                    {% if u['ativo'] %}onsubmit='return confirm({{ ("Desativar " ~ u["nome"] ~ "? A pessoa não consegue mais entrar no sistema.")|tojson }});'{% endif %}>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="{{ 'button-ghost' if u['ativo'] else 'button-outline' }}">{{ 'Desativar' if u['ativo'] else 'Reativar' }}</button>
+              </form>
+            {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  // "Salvar perfil e setor" só aparece na linha que foi alterada
+  (function () {
+    const alterado = (c) => c.tagName === "SELECT" ? !c.options[c.selectedIndex].defaultSelected : c.value !== c.defaultValue;
+    document.querySelectorAll("[data-salvar]").forEach((b) => { b.hidden = true; });
+    document.querySelectorAll("[data-editar]").forEach((campo) => {
+      const id = campo.dataset.editar;
+      const mostrar = () => {
+        const campos = document.querySelectorAll('[data-editar="' + id + '"]');
+        document.querySelector('[data-salvar="' + id + '"]').hidden = ![...campos].some(alterado);
+      };
+      campo.addEventListener("input", mostrar);
+      campo.addEventListener("change", mostrar);
+    });
+  })();
+</script>
+
+<section class="panel">
+  <h2>Novo usuário</h2>
+  <p class="muted small">O sistema gera uma senha provisória, que aparece aqui uma única vez.</p>
+  <dl class="def-grid perfis-legenda">
+    {% for valor, rotulo in papeis %}
+    <dt>{{ rotulo }}</dt><dd>{{ descricao_papel[valor] }}</dd>
+    {% endfor %}
+  </dl>
+  <form method="post" action="{{ url_for('staff.criar_usuario') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Nome
+      <input type="text" name="nome" value="{{ form.get('nome', '') }}" required maxlength="150">
+    </label>
+    <label>Login (usuário)
+      <input type="text" name="username" value="{{ form.get('username', '') }}" required maxlength="40"
+             pattern="[a-zA-Z0-9._\-]{3,40}" placeholder="ex: maria.silva" autocomplete="off">
+    </label>
+    <label>Perfil de acesso
+      <select name="papel" required>
+        {% for valor, rotulo in papeis %}
+        <option value="{{ valor }}"{% if form.get('papel', 'secretaria') == valor %} selected{% endif %}>{{ rotulo }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Setor (opcional)
+      <input type="text" name="setor" value="{{ form.get('setor', '') }}" maxlength="100" placeholder="ex: Secretaria, Coordenação">
+    </label>
+    <label>E-mail (opcional, para o "Esqueci minha senha")
+      <input type="email" name="email" value="{{ form.get('email', '') }}" maxlength="150">
+    </label>
+    <button type="submit">Criar usuário</button>
+  </form>
+</section>
+{% endblock %}

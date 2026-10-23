@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Pendências cadastrais · {{ aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}">&larr; {{ aluno['nome'] }}</a>
+<h1>Pendências cadastrais</h1>
+<p class="muted">Aparecem para o responsável na Área do aluno. Não escreva aqui informação de
+  saúde/diagnóstico — isso fica só no laudo AEE, visível apenas à equipe. As recomendações da escola
+  agora ficam na aba <strong>Boletim &amp; Frequência</strong> da ficha do aluno (uma por bimestre, como
+  no conselho de classe).</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label>Pendências cadastrais
+    <textarea name="alteracoes_pendentes" rows="4" style="width:100%; font-family:inherit; padding:10px 12px; border:1px solid var(--cinza-borda); border-radius:var(--raio-pequeno);" placeholder="Ex: atualizar telefone de contato; falta enviar cópia do RG...">{{ aluno['alteracoes_pendentes'] or '' }}</textarea>
+  </label>
+  <p class="muted small">Aparece em destaque (com aviso) na tela do responsável, pra ele saber o que
+    ainda precisa regularizar. Deixe em branco para não mostrar nada.</p>
+
+  <button type="submit" class="button-grande" style="margin-top:16px;">Salvar</button>
+</form>
+{% endblock %}

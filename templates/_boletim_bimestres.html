@@ -1,0 +1,143 @@
+{#- Boletim em abas por bimestre (e por ano letivo, se houver mais de um).
+    Usado na ficha do aluno (equipe) e na área do responsável — as duas
+    telas mostram o boletim do mesmo jeito. Espera "boletim" no formato
+    {ano: {bimestre: [notas]}}, ano mais recente primeiro.
+
+    Na área do responsável (variável "resumo" presente) a tela ganha:
+    abre no bimestre mais recente, cartões de resumo (inclusive quantos
+    componentes estão com NS = não satisfatório), legenda junto das
+    abas, componentes sem lançamento recolhidos e, no celular, cada
+    componente vira um cartão (data-label em cada célula). -#}
+{% set responsavel = resumo is defined %}
+{% set freq_min = frequencia_minima if frequencia_minima is defined else 75 %}
+
+{% macro celula_conceito(n) -%}
+  {%- set c = (n['conceito'] or '')|trim|upper -%}
+  {%- if c == 'P' -%}<span class="conceito conceito-p" title="Plenamente satisfatório">P</span>
+  {%- elif c == 'S' -%}<span class="conceito conceito-s" title="Satisfatório">S</span>
+  {%- elif c == 'NS' -%}<span class="conceito conceito-ns" title="Não satisfatório">NS</span>
+  {%- elif c and c != '-' -%}<span class="conceito">{{ c }}</span>
+  {%- else -%}—{%- endif -%}
+{%- endmacro %}
+
+{% macro linha(n) %}
+<tr>
+  <td data-label="Componente">{{ n['disciplina'] }}</td>
+  <td data-label="Conceito">{{ celula_conceito(n) }}</td>
+  <td data-label="Faltas">{{ n['faltas'] if n['faltas'] is not none else '—' }}</td>
+  <td data-label="Compensações">{{ n['compensacoes'] if n['compensacoes'] is not none else '—' }}</td>
+  <td data-label="Frequência">
+    {%- if n['frequencia'] is not none -%}
+    <span class="{{ 'freq-baixa' if n['frequencia'] < freq_min }}"
+          {% if n['frequencia'] < freq_min %}title="Abaixo do mínimo de {{ freq_min }}%"{% endif %}>{{ '%.1f'|format(n['frequencia']) }}%</span>
+    {%- else -%}—{%- endif -%}
+  </td>
+</tr>
+{% endmacro %}
+
+{% macro bloco_recomendacao(ano, bimestre) %}
+{%- set rec = recomendacoes_bimestre.get((ano, bimestre)) if recomendacoes_bimestre is defined else none -%}
+{% if pode_editar_recomendacao is defined and pode_editar_recomendacao %}
+<form method="post" action="{{ url_for('staff.salvar_recomendacao', student_id=aluno['id']) }}" class="recomendacao-bimestre" data-salvar-ajax>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="ano" value="{{ ano }}">
+  <input type="hidden" name="bimestre" value="{{ bimestre }}">
+  <label>Recomendações do conselho de classe · {{ bimestre }}º bimestre
+    <textarea name="texto" rows="3" placeholder="Ex: avançou na leitura; reforçar tabuada em casa; participar mais das atividades em grupo...">{{ rec['texto'] if rec else '' }}</textarea>
+  </label>
+  <div class="recomendacao-rodape">
+    <span class="muted small" data-status>{% if rec %}Última edição: {{ rec['atualizado_por'] or '—' }}{% else %}Aparece para o responsável na Área do aluno, neste bimestre.{% endif %}</span>
+    <button type="submit" class="button-outline">Salvar recomendação</button>
+  </div>
+</form>
+{% elif rec %}
+<div class="recomendacao-bimestre recomendacao-leitura">
+  <strong>Recomendações do conselho de classe · {{ bimestre }}º bimestre</strong>
+  <p>{{ rec['texto'] }}</p>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro cabecalho() %}
+<thead>
+  <tr>
+    <th scope="col">Componente curricular</th>
+    <th scope="col">Conceito</th>
+    <th scope="col">Faltas</th>
+    <th scope="col">Compensações</th>
+    <th scope="col">Frequência</th>
+  </tr>
+</thead>
+{% endmacro %}
+
+{% for ano, bimestres in boletim.items() %}
+{% set ano_mais_recente = loop.first %}
+{% set ativo = (bimestres|list|last) if (responsavel and ano_mais_recente) else (bimestres|list|first) %}
+<div data-tabs class="bloco-ano{% if not loop.last %} bloco-ano-separado{% endif %}">
+  {% if boletim|length > 1 %}<h3>Ano letivo {{ ano }}</h3>{% endif %}
+  <div class="boletim-abas">
+    <div class="pilulas" role="tablist">
+      {% for bimestre, notas in bimestres.items() %}
+      <button type="button" class="pilula{% if bimestre == ativo %} ativa{% endif %}" data-tab-btn="{{ ano }}-{{ bimestre }}" role="tab" aria-selected="{{ 'true' if bimestre == ativo else 'false' }}">{{ bimestre }}º Bimestre</button>
+      {% endfor %}
+    </div>
+    {% if responsavel %}
+    <p class="boletim-legenda">
+      <span class="conceito conceito-p">P</span> Plenamente satisfatório
+      <span class="conceito conceito-s">S</span> Satisfatório
+      <span class="conceito conceito-ns">NS</span> Não satisfatório
+      <span class="freq-baixa">vermelho</span> = frequência abaixo de {{ freq_min }}%
+    </p>
+    {% endif %}
+  </div>
+
+  {% for bimestre, notas in bimestres.items() %}
+  <div data-tab-panel="{{ ano }}-{{ bimestre }}" role="tabpanel" {% if bimestre != ativo %}hidden{% endif %}>
+    {% if responsavel %}
+    {% set r = resumo[(ano, bimestre)] %}
+    <h3 class="so-imprimir">{{ ano }} · {{ bimestre }}º bimestre</h3>
+    <div class="resumo-bimestre">
+      <div class="resumo-cartao{% if r['frequencia'] is not none and r['frequencia'] < freq_min %} resumo-alerta{% endif %}">
+        <span class="resumo-valor">{{ ('%.1f'|format(r['frequencia'])) ~ '%' if r['frequencia'] is not none else '—' }}</span>
+        <span class="resumo-rotulo">Frequência média</span>
+      </div>
+      <div class="resumo-cartao">
+        <span class="resumo-valor">{{ r['faltas'] }}</span>
+        <span class="resumo-rotulo">Faltas no bimestre{% if r['compensacoes'] %} · {{ r['compensacoes'] }} compensada(s){% endif %}</span>
+      </div>
+      <div class="resumo-cartao{% if r['nao_satisfatorio'] %} resumo-alerta{% endif %}">
+        <span class="resumo-valor">{{ r['nao_satisfatorio'] }}</span>
+        <span class="resumo-rotulo">Componente(s) com NS (não satisfatório){% if r['componentes'] %} de {{ r['componentes'] }}{% endif %}</span>
+      </div>
+    </div>
+    <table class="tabela-notas tabela-boletim-responsiva">
+      {{ cabecalho() }}
+      <tbody>
+        {% for n in r['lancadas'] %}{{ linha(n) }}{% endfor %}
+      </tbody>
+    </table>
+    {% if not r['lancadas'] %}<p class="muted">Nenhum lançamento neste bimestre ainda.</p>{% endif %}
+    {% if r['vazios'] %}
+    <details class="boletim-vazios">
+      <summary>Ver {{ r['vazios']|length }} componente(s) ainda sem lançamento</summary>
+      <p class="muted small">{{ r['vazios']|map(attribute='disciplina')|join(' · ') }}</p>
+    </details>
+    {% endif %}
+    {{ bloco_recomendacao(ano, bimestre) }}
+    <p class="muted small boletim-nota"><strong>Compensações</strong> são faltas repostas com atividades de
+      compensação: as faltas compensadas não diminuem a frequência.</p>
+    {% else %}
+    <div style="overflow-x:auto;">
+    <table class="tabela-notas">
+      {{ cabecalho() }}
+      <tbody>
+        {% for n in notas %}{{ linha(n) }}{% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {{ bloco_recomendacao(ano, bimestre) }}
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Início · Sistema Escolar{% endblock %}
+{% block container_class %}pagina-inicio{% endblock %}
+{% block hero %}<div class="hero-inicio"></div>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/busca_aluno_dashboard.js') }}"></script>{% endblock %}
+{% block content %}
+<h1>Olá, {{ user['nome'].split(' ')[0]|title }}</h1>
+<p class="muted">Veja um resumo da rede e acesse as turmas.</p>
+
+<div class="buscas-dashboard">
+  <div class="busca-aluno-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <label class="sr-only" for="busca-aluno-dashboard">Buscar aluno pelo nome</label>
+    <input type="text" id="busca-aluno-dashboard" placeholder="Buscar aluno pelo nome..." autocomplete="off">
+    <div id="resultados-busca-aluno-dashboard" class="resultados-busca-trocar" hidden></div>
+  </div>
+  <div class="busca-aluno-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 21-2.6-2.6"/><circle cx="18" cy="16" r="2.6"/></svg>
+    <label class="sr-only" for="busca-responsavel-dashboard">Buscar pelo nome do responsável</label>
+    <input type="text" id="busca-responsavel-dashboard" placeholder="Buscar pelo nome do responsável..." autocomplete="off">
+    <div id="resultados-busca-responsavel-dashboard" class="resultados-busca-trocar" hidden></div>
+  </div>
+</div>
+
+<div class="stats-linha">
+  <div class="card stat-card">
+    <span class="icone-caixa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </span>
+    <div>
+      <div class="stat-numero">{{ total_alunos }}</div>
+      <div class="stat-label">Alunos ativos</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <span class="icone-caixa" style="background: var(--roxo-bg); color: var(--roxo-texto);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </span>
+    <div>
+      <div class="stat-numero">{{ total_aee }}</div>
+      <div class="stat-label">Alunos AEE</div>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <span class="icone-caixa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </span>
+    <div>
+      <div class="stat-numero">{{ total_turmas }}</div>
+      <div class="stat-label">Turmas</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel-header" style="margin-bottom:4px;">
+  <h2>Turmas</h2>
+  {% if user['papel'] in ('admin', 'secretaria') %}
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a class="button-outline" href="{{ url_for('staff.configurar_turnos') }}" style="padding:6px 14px; font-size:.85rem;">Configurar turnos</a>
+    <a class="button" href="{{ url_for('staff.novo_aluno') }}" style="padding:6px 14px; font-size:.85rem;">+ Novo aluno</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if total_turmas == 0 %}
+<p class="muted">Nenhuma turma cadastrada ainda. Rode os scripts em <code>scripts/</code> para importar os dados.</p>
+{% else %}
+  {% for turno in ordem_turnos %}
+    {% if turmas_por_turno[turno] %}
+    <details class="turno-gaveta">
+      <summary>
+        <span class="turno-gaveta-nome">{{ turno }}</span>
+        <span class="muted small">{{ resumo_turno[turno]['turmas'] }} turma(s) · {{ resumo_turno[turno]['alunos'] }} aluno(s)</span>
+      </summary>
+      <div class="turno-gaveta-conteudo">
+        {% for serie, lista in turmas_por_turno[turno].items() %}
+        <div class="serie-linha">
+          <span class="serie-rotulo">{{ serie }}</span>
+          <div class="pilulas">
+            {% for t in lista %}
+            <a class="pilula" href="{{ url_for('staff.turma_view', turma=t['turma']) }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              {{ t['turma'] }}
+              <span class="muted small">({{ t['total'] }})</span>
+              {% if t['total_aee'] %}<span class="badge badge-aee">{{ t['total_aee'] }} AEE</span>{% endif %}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
+  {% endfor %}
+
+  {% if turmas_sem_turno %}
+  <details class="turno-gaveta">
+    <summary>
+      <span class="turno-gaveta-nome">Turno não definido</span>
+      <span class="muted small">{{ resumo_sem_turno['turmas'] }} turma(s) · {{ resumo_sem_turno['alunos'] }} aluno(s)</span>
+    </summary>
+    <div class="turno-gaveta-conteudo">
+      {% for serie, lista in turmas_sem_turno.items() %}
+      <div class="serie-linha">
+        <span class="serie-rotulo">{{ serie }}</span>
+        <div class="pilulas">
+          {% for t in lista %}
+          <a class="pilula" href="{{ url_for('staff.turma_view', turma=t['turma']) }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            {{ t['turma'] }}
+            <span class="muted small">({{ t['total'] }})</span>
+            {% if t['total_aee'] %}<span class="badge badge-aee">{{ t['total_aee'] }} AEE</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+{% endif %}
+
+{% if projetos %}
+<details class="turno-gaveta">
+  <summary>
+    <span class="turno-gaveta-nome">Projetos</span>
+    <span class="muted small">{{ projetos|length }} turma(s) · {{ projetos|sum(attribute='ativos') or 0 }} aluno(s) ativo(s)</span>
+  </summary>
+  <div class="turno-gaveta-conteudo">
+    <ul class="lista-projetos">
+      {% for p in projetos %}
+      <li>
+        <a class="pilula" href="{{ url_for('staff.projeto_view', projeto_id=p['id']) }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          {{ p['turma'] or p['nome'] }}
+          <span class="muted small">({{ p['ativos'] or 0 }})</span>
+        </a>
+        <span class="projeto-descricao">{{ p['descricao'] }}{% if p['turno'] %} · <span class="muted">{{ p['turno'] }}</span>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</details>
+{% endif %}
+{% endblock %}

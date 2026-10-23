@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Importar arquivo morto · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('arquivo_morto.index') }}">&larr; Arquivo Morto</a>
+<h1>Importar arquivo morto</h1>
+<p class="muted">Planilha com <strong>uma aba por letra do alfabeto</strong> (A a Z), cada uma com as
+  colunas Número, Nome e Data de Nascimento, sem cabeçalho — os dados começam direto na primeira linha.</p>
+
+<section class="panel">
+  <h2>Como funciona</h2>
+  <ul class="small">
+    <li>A letra de cada registro vem do <strong>nome da aba</strong> — a aba "A" vira os registros da
+      letra A, e assim por diante.</li>
+    <li>Linha com número mas sem nome preenchido é ignorada (comum no fim de cada aba, num arquivo que
+      tem os números pré-preenchidos até o final).</li>
+    <li>Importar a mesma planilha de novo (ou uma atualizada) não duplica quem já foi importado antes —
+      confere por letra + número + nome.</li>
+    <li>Só aceita <strong>.xlsx</strong>. Se seu arquivo for <strong>.xls</strong> (formato antigo), abra
+      no Excel ou LibreOffice e use "Salvar como" → "Pasta de trabalho do Excel (.xlsx)" antes de subir
+      aqui.</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Arquivo (.xlsx)
+      <input type="file" name="planilha" accept=".xlsx" required>
+    </label>
+    <button type="submit" style="margin-top:14px;">Enviar e importar</button>
+  </form>
+</section>
+{% endblock %}

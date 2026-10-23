@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Importar notas · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Painel</a>
+<h1>Importar notas (Ata Bimestral)</h1>
+<p class="muted">O PDF é lido e fica em conferência antes de virar nota oficial —
+  nada aparece para os responsáveis até você revisar e confirmar.</p>
+
+<section class="panel">
+  <h2>Nova importação</h2>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.notas_upload') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Arquivo da Ata Bimestral (.pdf)
+      <input type="file" name="pdf" accept="application/pdf" required>
+    </label>
+    <label>Ano letivo
+      <input type="number" name="ano" value="{{ ano_letivo }}" required>
+    </label>
+    <label>Bimestre
+      <select name="bimestre" required>
+        <option value="1">1º bimestre</option>
+        <option value="2">2º bimestre</option>
+        <option value="3">3º bimestre</option>
+        <option value="4">4º bimestre</option>
+      </select>
+    </label>
+    <label>Turmas (opcional)
+      <input type="text" name="turmas" placeholder="Ex: 1A, 1B, 6C — deixe em branco para todas">
+    </label>
+    <button type="submit">Enviar e ler PDF</button>
+  </form>
+  <p class="muted small">Séries atendidas pelo sistema: {{ series|join(', ') }}.
+    A leitura roda em segundo plano (pode levar de 1 a 3 minutos em arquivos
+    grandes) — não precisa esperar nem recarregar a página.</p>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--verde-claro); color: var(--verde);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </span>
+      <div>
+        <h2>Já tenho o arquivo processado</h2>
+        <p class="muted small" style="margin:2px 0 0;">Envie o <code>.json</code> gerado no seu computador com
+          <code>scripts/exportar_notas_json.py</code> — pula a leitura pesada no servidor, útil em hospedagens
+          com pouca CPU (ex: plano Free do Render).</p>
+      </div>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.notas_upload_json') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="json" accept="application/json,.json" required>
+    <button type="submit">Enviar JSON já processado</button>
+  </form>
+  <p class="muted small">No seu computador, com o projeto instalado:
+    <code>python scripts/exportar_notas_json.py sua_ata.pdf --ano 2026 --bimestre 1</code> —
+    isso gera um <code>.json</code> ao lado do PDF, pronto para enviar aqui. Nunca commite esse arquivo
+    no Git se a Ata for real (tem dado de aluno de verdade) — ele deve ir só por aqui.</p>
+</section>
+
+<section class="panel">
+  <h2>Importações recentes</h2>
+  {% if lotes %}
+  <table class="tabela-notas">
+    <thead><tr><th scope="col">Arquivo</th><th scope="col">Ano/Bim.</th><th scope="col">Status</th><th scope="col">Alunos</th><th scope="col">Não localizados</th><th scope="col"></th></tr></thead>
+    <tbody>
+      {% for l in lotes %}
+      <tr>
+        <td>{{ l['arquivo'] }}</td>
+        <td>{{ l['ano'] }} · {{ l['bimestre'] }}º</td>
+        <td>
+          {% if l['processando'] %}<span class="badge badge-aviso">lendo o PDF…</span>
+          {% elif l['erro_mensagem'] %}<span class="badge badge-muted" title="{{ l['erro_mensagem'] }}">erro na leitura</span>
+          {% elif l['status'] == 'pendente' %}<span class="badge badge-aviso">aguardando revisão</span>
+          {% elif l['status'] == 'confirmado' %}<span class="badge badge-ok">confirmado ({{ l['total_gravado'] }} notas)</span>
+          {% else %}<span class="badge badge-muted">descartado</span>{% endif %}
+        </td>
+        <td>{{ l['total_alunos'] }}</td>
+        <td>{{ l['total_nao_localizados'] }}</td>
+        <td>
+          {% if l['processando'] %}
+            <a class="button-outline" href="{{ url_for('importacao.status', lote_id=l['id']) }}">Acompanhar</a>
+          {% elif l['status'] == 'pendente' and not l['erro_mensagem'] %}
+            <a class="button" href="{{ url_for('importacao.revisar', lote_id=l['id']) }}">Revisar</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma importação ainda.</p>
+  {% endif %}
+</section>
+{% endblock %}

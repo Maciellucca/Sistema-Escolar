@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Senha e e-mail · Sistema Escolar{% endblock %}
+{% block content %}
+{% if not session.get('trocar_senha') %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+{% endif %}
+<div class="auth-card">
+  {% if session.get('trocar_senha') %}
+  <h1>Crie a sua senha</h1>
+  <p class="muted">Você entrou com uma senha provisória gerada pelo administrador. Digite-a em "Senha atual"
+    e escolha uma senha nova, que só você vai saber.</p>
+  {% else %}
+  <h1>Alterar senha</h1>
+  <p class="muted">Sua senha atual é necessária para confirmar a troca.</p>
+  {% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Senha atual
+      <input type="password" name="senha_atual" autocomplete="current-password" required autofocus>
+    </label>
+    <label>Nova senha
+      <input type="password" name="nova_senha" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>Confirmar nova senha
+      <input type="password" name="nova_senha2" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button type="submit">Salvar nova senha</button>
+  </form>
+</div>
+
+<div class="auth-card" id="email-recuperacao" style="margin-top:20px;">
+  <h2>E-mail para recuperar a senha</h2>
+  <p class="muted small">Se você esquecer a senha, o código para criar uma nova é enviado para este e-mail
+    (opção "Esqueci minha senha" na tela de login).</p>
+  {% if user['email'] %}
+  <p class="small">Cadastrado atualmente: <strong>{{ user['email'] }}</strong></p>
+  {% else %}
+  <p class="small badge-aviso">Nenhum e-mail cadastrado — sem ele não é possível recuperar a senha sozinho.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('staff.alterar_email') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>E-mail
+      <input type="email" name="email" value="{{ user['email'] or '' }}" autocomplete="email" maxlength="150"
+             placeholder="Deixe em branco para remover">
+    </label>
+    <label>Senha atual (para confirmar)
+      <input type="password" name="senha_atual_email" autocomplete="current-password" required>
+    </label>
+    <button type="submit">Salvar e-mail</button>
+  </form>
+</div>
+{% endblock %}

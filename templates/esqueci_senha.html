@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Esqueci minha senha · Sistema Escolar{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Esqueci minha senha</h1>
+  {% if configurado %}
+  <p class="muted">Informe seu usuário ou o e-mail cadastrado. Vamos enviar um código de 6 dígitos pra esse e-mail.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Usuário ou e-mail
+      <input type="text" name="identificador" autocomplete="username" required autofocus>
+    </label>
+    <button type="submit">Enviar código</button>
+  </form>
+  <p class="muted small">Já recebeu o código? <a href="{{ url_for('staff.redefinir_senha') }}">Digitar o código</a>.</p>
+  <p class="muted small">Não tem e-mail cadastrado? Peça ao administrador do sistema pra redefinir sua senha.</p>
+  {% else %}
+  <p>A recuperação de senha por e-mail ainda não foi configurada neste servidor.</p>
+  <p class="muted small">Procure o administrador do sistema pra redefinir sua senha.</p>
+  {% endif %}
+  <p class="muted small"><a href="{{ url_for('staff.login') }}">&larr; Voltar para o login</a></p>
+</div>
+{% endblock %}

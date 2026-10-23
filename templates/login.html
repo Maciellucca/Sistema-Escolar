@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Entrar · Sistema Escolar{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Acesso da equipe escolar</h1>
+  <p class="muted">Uso restrito a profissionais autorizados da unidade.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Usuário
+      <input type="text" name="username" autocomplete="username" required autofocus>
+    </label>
+    <label>Senha
+      <input type="password" name="senha" autocomplete="current-password" required>
+    </label>
+    <button type="submit">Entrar</button>
+  </form>
+  <p class="small" style="margin-top:10px;"><a href="{{ url_for('staff.esqueci_senha') }}">Esqueci minha senha</a></p>
+  <div class="auth-area-aluno">
+    <p class="muted small">É responsável e recebeu o código da secretaria?</p>
+    <a class="button" href="{{ url_for('guardian.acesso') }}">Área do Aluno</a>
+  </div>
+  <p class="muted small">
+    <a href="{{ url_for('staff.criar_admin') }}">Criar usuário administrador</a>
+    <span class="muted">(requer a chave de configuração do servidor)</span>
+  </p>
+</div>
+{% endblock %}

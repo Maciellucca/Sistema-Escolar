@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Criar administrador · Sistema Escolar{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Criar usuário administrador</h1>
+  <p class="muted">Esta tela não é um cadastro público. Só cria a conta quem souber a
+    <strong>chave de configuração do servidor</strong> (definida em <code>ADMIN_SETUP_KEY</code>
+    ou <code>SECRET_KEY</code> no arquivo <code>.env</code> da instalação).</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Usuário (login)
+      <input type="text" name="username" value="{{ username or '' }}" autocomplete="off" required autofocus>
+    </label>
+    <label>Nome completo
+      <input type="text" name="nome" value="{{ nome or '' }}" required>
+    </label>
+    <label>Setor
+      <input type="text" name="setor" value="{{ setor or '' }}" placeholder="Ex: Secretaria, Direção, Coordenação Pedagógica" required>
+    </label>
+    <label>E-mail (opcional — usado no "Esqueci minha senha")
+      <input type="email" name="email" value="{{ email or '' }}" autocomplete="email" maxlength="150">
+    </label>
+    <label>Senha
+      <input type="password" name="senha" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>Confirmar senha
+      <input type="password" name="senha2" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>Chave de configuração do servidor
+      <input type="password" name="chave" autocomplete="off" required>
+    </label>
+    <button type="submit">Criar administrador</button>
+  </form>
+  <p class="muted small"><a href="{{ url_for('staff.login') }}">&larr; Voltar para o login</a></p>
+</div>
+{% endblock %}

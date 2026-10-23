@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Conferência de notas · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('importacao.notas_index') }}">&larr; Importações</a>
+<h1>Conferência: {{ lote['arquivo'] }}</h1>
+<p class="muted">{{ lote['ano'] }} · {{ lote['bimestre'] }}º bimestre ·
+  {{ lote['total_alunos'] }} aluno(s) lido(s) no PDF
+  {% if lote['total_nao_localizados'] %}
+    · <strong>{{ lote['total_nao_localizados'] }} não localizado(s) automaticamente</strong> — corrija abaixo antes de confirmar
+  {% endif %}
+</p>
+<p class="muted small">Nada disto é nota oficial ainda. Revise, corrija o que precisar e só então clique em
+  <strong>“Confirmar e gravar”</strong> no final da página. Alunos com a caixa “incluir” desmarcada, ou sem um
+  aluno do sistema selecionado, não são gravados.</p>
+
+<form method="post" action="{{ url_for('importacao.confirmar', lote_id=lote['id']) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for turma_pdf, alunos in turmas.items() %}
+  <section class="panel">
+    <h2>Turma {{ turma_pdf }} <span class="muted small">({{ alunos|length }} aluno(s))</span></h2>
+
+    {% for aluno_key, info in alunos.items() %}
+    <details class="revisao-aluno" {% if not info['student_id'] %}open{% endif %}>
+      <summary>
+        {% if info['student_id'] %}
+          <span class="badge badge-ok">encontrado</span>
+        {% else %}
+          <span class="badge badge-aviso">não localizado</span>
+        {% endif %}
+        {{ info['nome_pdf'] }}
+        {% if info['nome_sistema'] and info['nome_sistema'] != info['nome_pdf'] %}
+          <span class="muted small">→ cadastro: {{ info['nome_sistema'] }}</span>
+        {% endif %}
+      </summary>
+
+      <div class="revisao-aluno-corpo">
+        <label class="inline-label">
+          <input type="checkbox" name="incluir::{{ aluno_key }}" {% if info['incluir'] %}checked{% endif %}>
+          Incluir este aluno na gravação
+        </label>
+
+        <input type="hidden" name="student_id::{{ aluno_key }}" value="{{ info['student_id'] or '' }}" class="campo-aluno-id">
+        <p class="muted small aluno-casado-info" {% if not info['student_id'] %}hidden{% endif %}>
+          Aluno no sistema: <strong class="nome-aluno-casado">{{ info['nome_sistema'] or '' }}</strong>
+          · <a href="#" class="link-trocar-aluno">trocar</a>
+        </p>
+        <div class="trocar-aluno-busca" {% if info['student_id'] %}hidden{% endif %}>
+          <input type="search" class="campo-busca-trocar" placeholder="Buscar aluno nesta turma…" data-turma="{{ turma_pdf }}">
+          <div class="resultados-busca-trocar"></div>
+        </div>
+
+        <table class="tabela-notas tabela-revisao">
+          <thead><tr><th scope="col">Componente</th><th scope="col">Faltas</th><th scope="col">Comp.</th><th scope="col">Frequência</th><th scope="col">Conceito/Nota</th></tr></thead>
+          <tbody>
+            {% for d in info['disciplinas'] %}
+            <tr>
+              <td>{{ d['disciplina'] }}</td>
+              <td><input type="text" size="3" name="faltas::{{ d['id'] }}" value="{{ d['faltas'] if d['faltas'] is not none else '' }}"></td>
+              <td><input type="text" size="3" name="comp::{{ d['id'] }}" value="{{ d['compensacoes'] if d['compensacoes'] is not none else '' }}"></td>
+              <td><input type="text" size="5" name="freq::{{ d['id'] }}" value="{{ d['frequencia'] if d['frequencia'] is not none else '' }}"></td>
+              <td><input type="text" size="4" name="conc::{{ d['id'] }}" value="{{ d['conceito'] or '' }}"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  <section class="panel confirmar-panel">
+    <button type="submit" class="button-grande">Confirmar e gravar notas</button>
+    <p class="muted small">Alunos não incluídos (caixa desmarcada ou sem casamento) simplesmente não entram no boletim — nada é perdido, você pode reimportar depois.</p>
+  </section>
+</form>
+
+<form method="post" action="{{ url_for('importacao.descartar', lote_id=lote['id']) }}" onsubmit="return confirm('Descartar esta importação inteira? Nada será gravado.');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="button-ghost">Descartar esta importação</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/revisar_lote.js') }}" defer></script>
+{% endblock %}

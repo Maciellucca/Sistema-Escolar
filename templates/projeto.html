@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ projeto['turma'] or projeto['nome'] }} · Projetos · Sistema Escolar{% endblock %}
+
+{% macro tabela(lista) %}
+<div style="overflow-x:auto;">
+  <table class="tabela-notas">
+    <thead>
+      <tr><th scope="col">Nº</th><th scope="col">Aluno</th><th scope="col">Código EOL</th><th scope="col">Turma regular</th><th scope="col">Situação no projeto</th></tr>
+    </thead>
+    <tbody>
+      {% for a in lista %}
+      <tr>
+        <td>{{ a['numero'] or '—' }}</td>
+        <td>
+          {% if a['student_id'] %}
+          <a href="{{ url_for('staff.aluno_detail', student_id=a['student_id']) }}">{{ a['nome_social'] or a['nome'] }}</a>
+          {% if a['aee'] %}<span class="badge badge-aee">AEE</span>{% endif %}
+          {% else %}
+          {{ a['nome'] }} <span class="badge badge-muted" title="Nenhum aluno com esse código EOL no sistema">sem cadastro</span>
+          {% endif %}
+        </td>
+        <td>{{ a['codigo_eol'] }}</td>
+        <td>
+          {% if a['turma_regular'] %}
+          <a href="{{ url_for('staff.turma_view', turma=a['turma_regular']) }}">{{ a['turma_regular'] }}</a>
+          {% if a['situacao_cadastro'] and a['situacao_cadastro'] != 'ATIVO' %}<span class="badge badge-muted">{{ a['situacao_cadastro']|lower }}</span>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ a['situacao'] or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Turmas</a>
+<div class="panel-header" style="border-bottom:none; margin-bottom:8px;">
+  <div>
+    <span class="badge badge-muted">Projeto</span>
+    <h1 style="margin-top:6px;">{{ projeto['nome'] }}</h1>
+    <p class="muted">Turno: <strong>{{ projeto['turno'] or '—' }}</strong>{% if projeto['ano'] %} · Ano letivo {{ projeto['ano'] }}{% endif %}
+      · {{ ativos|length }} aluno(s) ativo(s)</p>
+  </div>
+  {% if user['papel'] in ('admin', 'secretaria') %}
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a class="button-outline" href="{{ url_for('importacao.alunos_index') }}#turma-projeto">Atualizar lista</a>
+    <form method="post" action="{{ url_for('staff.excluir_projeto', projeto_id=projeto['id']) }}"
+          onsubmit='return confirm({{ ("Excluir a turma de projeto " ~ projeto["nome"] ~ "? O cadastro dos alunos e as turmas regulares não mudam.")|tojson }});'>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="button-ghost" style="margin-top:0;">Excluir turma de projeto</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+<p class="muted small">Os alunos de projeto continuam na turma regular deles. Esta lista vem do relatório
+  "Alunos da Turma" do SGP; importe o arquivo de novo para atualizá-la.</p>
+
+<section class="panel">
+  <h2>Alunos ativos</h2>
+  {% if ativos %}{{ tabela(ativos) }}{% else %}<p class="muted">Nenhum aluno ativo nesta turma de projeto.</p>{% endif %}
+</section>
+
+{% if outros %}
+<details class="panel projeto-outros">
+  <summary><strong>Outras situações</strong> <span class="muted small">({{ outros|length }}: vínculo indevido, remanejado, transferido...)</span></summary>
+  {{ tabela(outros) }}
+</details>
+{% endif %}
+{% endblock %}

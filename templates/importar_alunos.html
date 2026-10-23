@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Importar alunos · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+<h1>Importar alunos</h1>
+<p class="muted">O arquivo é lido e gravado direto no banco deste servidor — não passa pelo
+  código do sistema nem pelo GitHub em nenhum momento. Depois de importado, o arquivo
+  enviado é apagado do servidor automaticamente.</p>
+
+<section class="panel">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </span>
+      <div>
+        <h2>Lista de alunos — formato PILOTO</h2>
+        <p class="muted small" style="margin:2px 0 0;">Planilha exportada do sistema de matrícula da rede (colunas Código, RA Prodesp, Nome do Aluno, Série, ...).</p>
+      </div>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.alunos_upload_piloto') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Arquivo (.xlsx)
+      <input type="file" name="planilha" accept=".xlsx" required>
+    </label>
+    <label>Série (opcional)
+      <input type="text" name="serie" placeholder="Ex: 1º Ano — em branco importa todas">
+    </label>
+    <button type="submit">Enviar e importar</button>
+  </form>
+  <p class="muted small">Se o arquivo original for <code>.xls</code> (formato antigo), abra no Excel/LibreOffice
+    e use "Salvar como" → <code>.xlsx</code> antes de enviar.</p>
+</section>
+
+<section class="panel" id="turma-projeto">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--verde-bg, #E3EFE8); color: var(--indigo);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </span>
+      <div>
+        <h2>Turma de projeto — "Alunos da Turma" do SGP</h2>
+        <p class="muted small" style="margin:2px 0 0;">Relatório de uma turma de projeto (ex: PAP, Aprender e Ensinar). A turma vem
+          das linhas do topo: <strong>Turma</strong> + <strong>Descrição</strong> e o <strong>Turno</strong> (sem a duração).</p>
+      </div>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.alunos_upload_projeto') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="planilha" accept=".xls,.xlsx,.htm,.html" required>
+    <button type="submit">Enviar e importar</button>
+  </form>
+  <p class="muted small">Pode enviar o <code>.xls</code> do SGP do jeito que ele vem. Diferente da lista PILOTO, a turma
+    regular dos alunos não muda: a turma de projeto aparece em <strong>Início → Turmas → Projetos</strong>. Importar a
+    mesma turma de novo atualiza a lista.</p>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--roxo-bg); color: var(--roxo-texto);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </span>
+      <div>
+        <h2>Lista de alunos — formato simplificado (com AEE junto)</h2>
+        <p class="muted small" style="margin:2px 0 0;">Planilha com colunas Turno, Turma, Nome do Aluno, Filiação 1, Data Nascimento, RA, Código, Data Matrícula, AEE — tudo em uma aba só.</p>
+      </div>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.alunos_upload_simplificado') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="planilha" accept=".xlsx" required>
+    <button type="submit">Enviar e importar</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--amarelo-bg); color: var(--amarelo-texto);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </span>
+      <div>
+        <h2>Identificação AEE (só para o formato PILOTO)</h2>
+        <p class="muted small" style="margin:2px 0 0;">Planilha separada de AEE — o cruzamento é feito pelo código do aluno. Importe a lista de alunos PILOTO antes desta.</p>
+      </div>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('importacao.alunos_upload_aee') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="planilha" accept=".xlsx" required>
+    <button type="submit">Enviar e cruzar AEE</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--verde-claro); color: var(--verde);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </span>
+      <div>
+        <h2>Fotos em lote</h2>
+        <p class="muted small" style="margin:2px 0 0;">Envie várias fotos de uma vez — o sistema casa cada arquivo com o aluno certo pelo nome do arquivo.</p>
+      </div>
+    </div>
+    <a class="button-outline" href="{{ url_for('importacao.fotos_index') }}">Enviar fotos</a>
+  </div>
+</section>
+{% endblock %}

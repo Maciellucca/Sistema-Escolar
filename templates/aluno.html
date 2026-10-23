@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}{{ aluno['nome_social'] or aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block container_class %}container-largo{% endblock %}
+{% block content %}
+<div class="ficha-layout" id="ficha-layout">
+{% include "_ficha_turma.html" %}
+<div class="ficha-principal">
+<div class="ficha-topo-nav">
+  <a class="back-link" href="{{ url_for('staff.turma_view', turma=aluno['turma']) }}">&larr; Turma {{ aluno['turma'] }}</a>
+  {% if colega_anterior or colega_proximo %}
+  <nav class="ficha-vizinhos" aria-label="Aluno anterior e próximo da turma">
+    {% if colega_anterior %}<a class="button-outline" data-colega href="{{ url_for('staff.aluno_detail', student_id=colega_anterior['id']) }}"
+       title="{{ colega_anterior['nome_social'] or colega_anterior['nome'] }}">&lsaquo; Anterior</a>{% endif %}
+    {% if colega_proximo %}<a class="button-outline" data-colega href="{{ url_for('staff.aluno_detail', student_id=colega_proximo['id']) }}"
+       title="{{ colega_proximo['nome_social'] or colega_proximo['nome'] }}">Próximo &rsaquo;</a>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+
+<section class="ficha-header">
+  <div class="foto-wrap grande">
+    {% if aluno['foto_path'] %}
+      <img src="{{ url_for('staff.foto', filename=aluno['foto_path']) }}" alt="Foto de {{ aluno['nome_social'] or aluno['nome'] }}">
+    {% else %}
+      <div class="foto-placeholder">{{ (aluno['nome_social'] or aluno['nome'])[0] }}</div>
+    {% endif %}
+  </div>
+  <div class="ficha-header-info">
+    <h1>{{ aluno['nome_social'] or aluno['nome'] }}
+      {% if aluno['aee'] %}<span class="badge badge-aee">AEE</span>{% endif %}
+      {% if aluno['situacao'] == 'ATIVO' %}<span class="badge badge-ok">Ativo</span>
+      {% elif aluno['situacao'] == 'TRANSFERIDO' %}<span class="badge badge-aviso">Transferido</span>
+      {% else %}<span class="badge badge-muted">{{ aluno['situacao'] }}</span>{% endif %}
+      <a href="{{ url_for('staff.editar_nome', student_id=aluno['id']) }}" class="editar-nome-link" title="Editar nome" aria-label="Editar nome">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+      </a>
+    </h1>
+    {% if aluno['nome_social'] %}
+    <p class="muted small">Nome de registro: {{ aluno['nome'] }}</p>
+    {% endif %}
+    <dl class="def-grid def-grid-ficha">
+      <dt>Turma / Série</dt>
+      <dd>{{ aluno['turma'] }}{% if aluno['serie'] %} · {{ aluno['serie'] }}{% endif %}
+        <a href="{{ url_for('staff.editar_turma', student_id=aluno['id']) }}" class="editar-nome-link" title="Editar turma" aria-label="Editar turma">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+        </a>
+      </dd>
+      <dt>RA Prodesp</dt><dd>{{ aluno['ra_prodesp'] or '—' }}</dd>
+      <dt>Código interno</dt><dd>{{ aluno['codigo_interno'] or '—' }}</dd>
+      <dt>Nascimento</dt><dd>{{ aluno['data_nascimento']|data_br('—') }}</dd>
+    </dl>
+    {% if aluno['situacao'] == 'TRANSFERIDO' %}
+    <p class="muted small">Transferido em {{ aluno['data_transferencia']|data_br('—') }}</p>
+    {% endif %}
+  </div>
+  <div class="ficha-header-acoes">
+    {% if codigo_acesso %}
+    <div class="codigo-acesso" title="Código de acesso do responsável à área do aluno">
+      <span class="codigo-acesso-rotulo">Código do responsável</span>
+      <span class="codigo-acesso-valor" id="codigo-acesso">{{ codigo_acesso[:3] }} {{ codigo_acesso[3:] }}</span>
+      <button type="button" class="button-outline codigo-acesso-copiar" data-copiar="{{ codigo_acesso }}">Copiar</button>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% set docs_pendentes = documentos_aluno|rejectattr('entregue')|list %}
+<section class="panel aviso-documentos" id="aviso-documentos" role="alert" {% if not docs_pendentes %}hidden{% endif %}>
+  <strong>Pendência de documentos:</strong>
+  <span data-lista>{% for d in docs_pendentes %}{{ rotulos_documentos[d['documento']] }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+  {% if pode_documentos %}<span class="muted small"> · tique em "Dados Cadastrais" quando o aluno entregar.</span>{% endif %}
+</section>
+
+<div data-tabs class="abas">
+  <div class="abas-nav" role="tablist">
+    <button type="button" class="aba-botao ativa" data-tab-btn="boletim" role="tab" aria-selected="true">Boletim &amp; Frequência</button>
+    {% if aluno['aee'] %}
+    <button type="button" class="aba-botao" data-tab-btn="aee" role="tab" aria-selected="false">Atendimento AEE</button>
+    {% endif %}
+    <button type="button" class="aba-botao" data-tab-btn="cadastro" role="tab" aria-selected="false">Dados Cadastrais &amp; Família</button>
+    <button type="button" class="aba-botao" data-tab-btn="gestao" role="tab" aria-selected="false">Gestão &amp; Transferência</button>
+  </div>
+
+  <div data-tab-panel="boletim" role="tabpanel">
+    <section class="panel">
+      {% if user['papel'] in ('admin', 'secretaria') %}
+      <div class="boletim-acoes">
+        <a class="button-outline" href="{{ url_for('staff.lancar_notas', student_id=aluno['id']) }}"
+           title="Para quando o aluno não veio na Ata Bimestral importada, ou para corrigir algum valor">Lançar notas manualmente</a>
+      </div>
+      {% endif %}
+      {% if boletim %}
+        <div class="boletim-imprimir">
+          <a class="button-outline" href="{{ url_for('staff.boletim_pdf', student_id=aluno['id']) }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
+            Imprimir boletim (PDF)
+          </a>
+          <span class="muted small">Todos os bimestres lançados num único arquivo.</span>
+        </div>
+        {% include "_boletim_bimestres.html" %}
+      {% else %}
+        <p class="muted">Nenhuma nota lançada ainda. Importe a Ata Bimestral (menu da conta → Importar notas){% if user['papel'] in ('admin', 'secretaria') %} ou use “Lançar notas manualmente”{% endif %}.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Recomendações gerais</h2>
+      {% if pode_editar_recomendacao %}
+      <form method="post" action="{{ url_for('staff.salvar_recomendacao', student_id=aluno['id']) }}" class="recomendacao-bimestre" data-salvar-ajax>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="muted small">Vale para o ano todo (as do conselho de classe ficam em cada bimestre, acima).
+          <textarea name="texto" rows="3" placeholder="Ex: reforço de leitura em casa, incentivar participação nas atividades em grupo...">{{ aluno['recomendacoes'] or '' }}</textarea>
+        </label>
+        <div class="recomendacao-rodape">
+          <span class="muted small" data-status>Aparece para o responsável na Área do aluno.</span>
+          <button type="submit" class="button-outline">Salvar recomendação</button>
+        </div>
+      </form>
+      {% else %}
+      <p>{{ aluno['recomendacoes'] or 'Nenhuma recomendação geral.' }}</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {% if aluno['aee'] %}
+  <div data-tab-panel="aee" role="tabpanel" hidden>
+    <section class="panel panel-aee">
+      <h2>Identificação AEE</h2>
+      {% if aee_detalhe %}
+        <dl class="def-grid">
+          <dt>Deficiência / condição</dt><dd>{{ aee_detalhe['deficiencia'] or '—' }}</dd>
+          <dt>Laudo / relatório</dt><dd>{{ aee_detalhe['laudo'] or '—' }}</dd>
+          <dt>Observações</dt><dd>{{ aee_detalhe['observacoes'] or '—' }}</dd>
+          <dt>Turno</dt><dd>{{ aee_detalhe['turno'] or '—' }}</dd>
+        </dl>
+        <p class="muted small">Visível apenas para perfis Admin e AEE, conforme a função de cada usuário.</p>
+      {% else %}
+        <p class="muted">Este aluno é identificado como público-alvo da Educação Especial. O detalhe do laudo é
+          visível apenas para os perfis Admin e AEE.</p>
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+
+  <div data-tab-panel="cadastro" role="tabpanel" hidden>
+    <section class="panel">
+      <h2>Filiação e naturalidade</h2>
+      <dl class="def-grid">
+        <dt>Filiação</dt><dd>{{ aluno['filiacao1'] or '—' }}</dd>
+        <dt>Naturalidade</dt>
+        <dd>{{ aluno['municipio_nascimento'] or '—' }}{% if aluno['estado_nascimento'] %}/{{ aluno['estado_nascimento'] }}{% endif %}</dd>
+        <dt>Nacionalidade</dt><dd>{{ aluno['nacionalidade'] or '—' }}</dd>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>RG e certidão de nascimento</h2>
+      <dl class="def-grid">
+        <dt>RG</dt>
+        <dd>{{ aluno['rg'] or '—' }}{% if aluno['rg_data_expedicao'] %} · exp. {{ aluno['rg_data_expedicao']|data_br }}{% endif %}{% if aluno['rg_orgao_expedidor'] %} · {{ aluno['rg_orgao_expedidor'] }}/{{ aluno['rg_estado_emissor'] or '' }}{% endif %}</dd>
+        <dt>Certidão</dt><dd>{{ aluno['certidao_nascimento'] or '—' }}</dd>
+        <dt>Livro / Folha</dt><dd>{{ aluno['certidao_livro'] or '—' }} / {{ aluno['certidao_folha'] or '—' }}</dd>
+        <dt>Distrito / UF</dt><dd>{{ aluno['certidao_distrito_municipio'] or '—' }} / {{ aluno['certidao_uf'] or '—' }}</dd>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Pendências cadastrais</h2>
+        <a class="button-outline" href="{{ url_for('staff.editar_area_do_aluno', student_id=aluno['id']) }}">Editar pendências</a>
+      </div>
+      {% if aluno['alteracoes_pendentes'] %}<p style="white-space:pre-line;">{{ aluno['alteracoes_pendentes'] }}</p>{% endif %}
+      <p class="muted small">Ex: telefone desatualizado, documento faltando — aparecem em destaque para o responsável
+        na Área do aluno. As recomendações ficam na aba <strong>Boletim &amp; Frequência</strong>.</p>
+    </section>
+  </div>
+
+  <div data-tab-panel="gestao" role="tabpanel" hidden>
+    <section class="panel">
+      <h2>Foto do aluno</h2>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('staff.upload_foto', student_id=aluno['id']) }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="foto" accept="image/png, image/jpeg, image/webp" required>
+        <button type="submit">Enviar foto</button>
+      </form>
+      <p class="muted small">Upload manual por enquanto. O envio automático (integração com o sistema de matrícula) fica para uma próxima etapa.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Acesso do responsável</h2>
+      {% if codigo_acesso %}
+      <p>Código de acesso (fixo para este aluno):
+        <strong class="codigo-acesso-valor">{{ codigo_acesso[:3] }} {{ codigo_acesso[3:] }}</strong>
+        <button type="button" class="button-outline codigo-acesso-copiar" data-copiar="{{ codigo_acesso }}">Copiar</button>
+      </p>
+      <p class="muted small">O responsável entra em <code>{{ url_for('guardian.acesso', _external=True) }}</code> e digita
+        esses 6 números. O código não muda — só troque se ele foi passado para a pessoa errada.</p>
+      <form method="post" action="{{ url_for('staff.gerar_token', student_id=aluno['id']) }}"
+            onsubmit="return confirm('Gerar um novo código? O código atual deixa de funcionar na hora.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="button-ghost">Trocar código</button>
+      </form>
+      {% if user['papel'] == 'admin' %}
+      <details style="margin-top:14px;">
+        <summary class="small">Trocar o código de <strong>todos</strong> os alunos (administrador)</summary>
+        <form method="post" action="{{ url_for('staff.trocar_todos_codigos') }}" class="inline-form" style="margin-top:8px;"
+              onsubmit="return confirm('Trocar o código de acesso de TODOS os alunos? Nenhum código atual vai funcionar mais.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="confirmacao" placeholder="Digite TROCAR TODOS" autocomplete="off" required style="max-width:220px;">
+          <button type="submit" class="button-ghost" style="margin-top:0;">Trocar de todos</button>
+        </form>
+        <p class="muted small">Use no início do ano letivo ou se os códigos vazarem. Depois, cada responsável precisa receber o novo código.</p>
+      </details>
+      {% endif %}
+      {% else %}
+      <p class="muted small">Só a secretaria e a administração veem o código de acesso do responsável.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Situação da matrícula</h2>
+      <p class="muted small">Situação atual: <strong>{{ aluno['situacao'] }}</strong>{% if aluno['situacao'] == 'TRANSFERIDO' %} · transferido em {{ aluno['data_transferencia']|data_br('—') }}{% endif %}</p>
+      {% if aluno['situacao'] == 'TRANSFERIDO' %}
+      <form method="post" action="{{ url_for('staff.reativar_aluno', student_id=aluno['id']) }}"
+            onsubmit="return confirm('Reativar a matrícula deste aluno? Ele volta a contar como ativo.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="button-outline">Reativar matrícula</button>
+      </form>
+      {% else %}
+      <a class="button-ghost" href="{{ url_for('staff.transferir_aluno', student_id=aluno['id']) }}">Marcar como transferido</a>
+      {% endif %}
+    </section>
+  </div>
+</div>
+</div>{# .ficha-principal #}
+</div>{# .ficha-layout #}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ficha_turma.js') }}" defer></script>
+{% endblock %}

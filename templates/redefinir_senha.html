@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Redefinir senha · Sistema Escolar{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Redefinir senha</h1>
+  <p class="muted">Digite o código de 6 dígitos que chegou no seu e-mail e escolha uma nova senha.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Código recebido por e-mail
+      <input type="text" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="7"
+             pattern="[0-9 ]{6,7}" placeholder="000000" required autofocus class="campo-codigo">
+    </label>
+    <label>Nova senha
+      <input type="password" name="nova_senha" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>Confirmar nova senha
+      <input type="password" name="nova_senha2" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button type="submit">Salvar nova senha</button>
+  </form>
+  <p class="muted small">Não recebeu? Confira o spam ou <a href="{{ url_for('staff.esqueci_senha') }}">peça um novo código</a>.</p>
+  <p class="muted small"><a href="{{ url_for('staff.login') }}">&larr; Voltar para o login</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Resultado da importação · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('arquivo_morto.index') }}">&larr; Arquivo Morto</a>
+<h1>Resultado da importação</h1>
+
+<section class="panel">
+  <h2>Resumo</h2>
+  <p><strong>{{ resultado['importados'] }}</strong> registro(s) novo(s) importado(s).</p>
+  {% if resultado['duplicados_ignorados'] %}
+  <p class="muted small">{{ resultado['duplicados_ignorados'] }} registro(s) já existiam (ignorados, sem
+    duplicar).</p>
+  {% endif %}
+  {% if resultado['abas_processadas'] %}
+  <p class="muted small">Abas processadas: {{ resultado['abas_processadas']|join(', ') }}</p>
+  {% endif %}
+  {% if resultado['abas_ignoradas'] %}
+  <p class="muted small">Abas ignoradas (nome não é uma letra só): {{ resultado['abas_ignoradas']|join(', ') }}</p>
+  {% endif %}
+</section>
+{% endblock %}

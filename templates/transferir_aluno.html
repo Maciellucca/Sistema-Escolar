@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Transferir aluno · {{ aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}">&larr; {{ aluno['nome'] }}</a>
+<h1>Marcar como transferido</h1>
+<p class="muted">O aluno deixa de contar como ativo (some das turmas, contagens do painel, exportação da
+  SPTrans, base de telefones etc.), mas o cadastro e o histórico continuam intactos — dá pra reverter
+  depois, se for engano.</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label style="max-width:260px;">Data da transferência
+    <input type="date" name="data_transferencia" required>
+  </label>
+  <button type="submit" class="button-grande" style="margin-top:16px;">Confirmar transferência</button>
+</form>
+{% endblock %}

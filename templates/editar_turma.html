@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Editar turma · {{ aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}">&larr; {{ aluno['nome_social'] or aluno['nome'] }}</a>
+<h1>Editar turma</h1>
+{% if aluno['turma'] == 'TEG-PROV' %}
+<p class="muted">Esse aluno foi criado automaticamente pela importação do TEG, que não traz a turma
+  específica — só coloque a turma certa (ex: 7A) que ele passa a contar no turno certo no painel
+  principal.</p>
+{% endif %}
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if proxima %}<input type="hidden" name="next" value="{{ proxima }}">{% endif %}
+  <div class="form-grid">
+    <label>Turma
+      <input type="text" name="turma" value="{{ aluno['turma'] }}" required placeholder="Ex: 7A">
+    </label>
+    <label>Série
+      <input type="text" name="serie" value="{{ aluno['serie'] or '' }}" placeholder="Ex: 7º Ano">
+    </label>
+  </div>
+  <button type="submit" class="button-grande" style="margin-top:16px;">Salvar</button>
+</form>
+{% endblock %}

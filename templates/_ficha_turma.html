@@ -1,0 +1,51 @@
+{# Coluna lateral da ficha: os alunos ativos da turma, como um diário de
+   classe (nº de chamada = ordem alfabética, igual aos boletins). #}
+<aside class="ficha-turma" id="ficha-turma" aria-label="Alunos da turma {{ aluno['turma'] }}">
+  <div class="ficha-turma-topo">
+    <div class="ficha-turma-titulo">
+      <form method="get" action="{{ url_for('staff.ir_para_turma') }}" class="ficha-turma-trocar">
+        <label for="ficha-turma-select" class="sr-only">Trocar de turma</label>
+        <select id="ficha-turma-select" name="turma" title="Trocar de turma" data-trocar-turma>
+          {% if aluno['turma'] not in turmas %}<option value="" selected>Turma {{ aluno['turma'] }}</option>{% endif %}
+          {% for t in turmas %}<option value="{{ t }}"{% if t == aluno['turma'] %} selected{% endif %}>Turma {{ t }}</option>{% endfor %}
+        </select>
+        <noscript><button type="submit" class="button-outline">Ir</button></noscript>
+      </form>
+      <span class="muted small">{{ colegas|length }} aluno(s) · <a href="{{ url_for('staff.turma_view', turma=aluno['turma']) }}">ver turma</a></span>
+    </div>
+    <button type="button" class="ficha-turma-recolher" id="ficha-turma-recolher"
+            aria-controls="ficha-turma-corpo" aria-expanded="true" title="Recolher lista da turma">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      <span class="sr-only">Recolher lista da turma</span>
+    </button>
+  </div>
+  <div class="ficha-turma-corpo" id="ficha-turma-corpo">
+    {% if colegas|length > 8 %}
+    <label class="sr-only" for="ficha-turma-filtro">Filtrar alunos da turma</label>
+    <input type="search" id="ficha-turma-filtro" class="ficha-turma-filtro" placeholder="Filtrar…" autocomplete="off">
+    {% endif %}
+    <ol class="ficha-turma-lista">
+      {% for c in colegas %}
+      {% set atual = c['id'] == aluno['id'] %}
+      <li>
+        <a href="{{ url_for('staff.aluno_detail', student_id=c['id']) }}" data-colega
+           class="{{ 'atual' if atual }}" {% if atual %}aria-current="page"{% endif %}>
+          <span class="ficha-turma-num">{{ loop.index }}</span>
+          <span class="ficha-turma-nome">{{ c['nome_social'] or c['nome'] }}</span>
+          {% if c['aee'] %}<span class="ficha-turma-aee" title="Aluno AEE">AEE</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+      {% if aluno['situacao'] != 'ATIVO' %}
+      <li>
+        <a href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}" class="atual" aria-current="page"
+           title="{{ aluno['situacao']|capitalize }}: fora da lista de chamada">
+          <span class="ficha-turma-num">—</span>
+          <span class="ficha-turma-nome">{{ aluno['nome_social'] or aluno['nome'] }}</span>
+        </a>
+      </li>
+      {% endif %}
+    </ol>
+    <p class="ficha-turma-vazio muted small" hidden>Nenhum aluno com esse nome.</p>
+  </div>
+</aside>

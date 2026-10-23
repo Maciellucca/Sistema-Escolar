@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Editar nome · {{ aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.aluno_detail', student_id=aluno['id']) }}">&larr; {{ aluno['nome'] }}</a>
+<h1>Editar nome</h1>
+<p class="muted">O nome de registro é o que sai em documentos oficiais (histórico escolar, planilha da
+  SPTrans) — precisa bater com a certidão de nascimento/RG. O nome social, se preenchido, passa a ser
+  usado no dia a dia do sistema (listagens, busca, boletim) no lugar do nome de registro.</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Nome de registro (documentos oficiais)
+    <input type="text" name="nome" value="{{ aluno['nome'] }}" required>
+  </label>
+  <p class="muted small" style="margin:4px 0 0;">Use isso pra corrigir acento ou erro de digitação vindo
+    da importação — não muda a identidade do aluno, só a grafia registrada no sistema.</p>
+
+  <label style="margin-top:18px;">Nome social (opcional)
+    <input type="text" name="nome_social" value="{{ aluno['nome_social'] or '' }}" placeholder="Deixe em branco se não se aplica">
+  </label>
+  <p class="muted small" style="margin:4px 0 0;">Aparece em vez do nome de registro nas telas do
+    dia a dia. Documentos oficiais continuam usando o nome de registro, como exige a lei.</p>
+
+  <button type="submit" class="button-grande" style="margin-top:18px;">Salvar</button>
+</form>
+{% endblock %}

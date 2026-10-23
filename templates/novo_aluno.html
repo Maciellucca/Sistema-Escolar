@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Novo aluno · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.turma_view', turma=form['turma']) if form['turma'] in turmas else url_for('staff.dashboard') }}">&larr; {{ 'Turma ' ~ form['turma'] if form['turma'] in turmas else 'Início' }}</a>
+<h1>Novo aluno</h1>
+<p class="muted">Cadastro manual, para quem ainda não veio na planilha do SGP. Ao importar a planilha depois,
+  o aluno é reconhecido pelo <strong>código EOL</strong> e só tem os dados atualizados — por isso vale preencher o EOL
+  quando já tiver.</p>
+
+{% if duplicado %}
+<section class="panel aviso-documentos" role="alert">
+  <strong>Aluno parecido já cadastrado:</strong>
+  <a href="{{ url_for('staff.aluno_detail', student_id=duplicado['id']) }}">{{ duplicado['nome'] }}</a>
+  — abra a ficha para conferir antes de cadastrar de novo.
+</section>
+{% endif %}
+
+<form method="post" class="panel novo-aluno-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Aluno</h2>
+  <div class="form-grid">
+    <label class="campo-largo">Nome completo *
+      <input type="text" name="nome" value="{{ form['nome'] }}" required maxlength="150" autocomplete="off">
+    </label>
+    <label>Nome social (opcional)
+      <input type="text" name="nome_social" value="{{ form['nome_social'] }}" maxlength="150" autocomplete="off">
+    </label>
+    <label>Data de nascimento
+      <input type="date" name="data_nascimento" value="{{ form['data_nascimento'] }}">
+    </label>
+    <label>Código EOL
+      <input type="text" name="codigo_interno" value="{{ form['codigo_interno'] }}" maxlength="20" inputmode="numeric"
+             placeholder="Ex: 7712736" autocomplete="off">
+    </label>
+    <label>RA Prodesp
+      <input type="text" name="ra_prodesp" value="{{ form['ra_prodesp'] }}" maxlength="30" placeholder="Ex: 000123456789-0/SP" autocomplete="off">
+    </label>
+  </div>
+
+  <h2 style="margin-top:22px;">Turma</h2>
+  <div class="form-grid">
+    <label>Turma *
+      <input type="text" name="turma" value="{{ form['turma'] }}" required maxlength="20" list="turmas-existentes"
+             placeholder="Ex: 4A" autocomplete="off">
+      <datalist id="turmas-existentes">
+        {% for t in turmas %}<option value="{{ t }}">{% endfor %}
+      </datalist>
+    </label>
+    <label>Série
+      <select name="serie">
+        <option value="">—</option>
+        {% for s in series %}<option value="{{ s }}"{% if form['serie'] == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" name="aee" value="1" {% if form['aee'] %}checked{% endif %}>
+      Aluno AEE (Educação Especial)
+    </label>
+  </div>
+
+  <h2 style="margin-top:22px;">Família</h2>
+  <div class="form-grid">
+    <label class="campo-largo">Filiação
+      <input type="text" name="filiacao1" value="{{ form['filiacao1'] }}" maxlength="150" autocomplete="off">
+    </label>
+    <label>Telefone da filiação 1
+      <input type="tel" name="telefone_filiacao1" value="{{ form['telefone_filiacao1'] }}" maxlength="40" placeholder="(11) 99999-9999">
+    </label>
+    <label>Telefone da filiação 2
+      <input type="tel" name="telefone_filiacao2" value="{{ form['telefone_filiacao2'] }}" maxlength="40" placeholder="(11) 99999-9999">
+    </label>
+  </div>
+
+  {% if duplicado %}
+  <label class="checkbox-label" style="margin-top:18px;">
+    <input type="checkbox" name="confirmar_homonimo" value="1">
+    Conferi: é outro aluno, com o mesmo nome. Cadastrar mesmo assim.
+  </label>
+  {% endif %}
+  <p class="muted small" style="margin-top:14px;">Os demais dados (documentos, endereço, SPTrans...) ficam na ficha
+    do aluno depois de salvar.</p>
+  <button type="submit" class="button-grande">Cadastrar aluno</button>
+</form>
+{% endblock %}

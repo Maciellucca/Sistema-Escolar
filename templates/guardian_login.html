@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Acesso do responsável · Sistema Escolar{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Área do aluno</h1>
+  <p class="muted">Digite o código de acesso de 6 números fornecido pela secretaria da escola.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Código de acesso
+      <input type="text" name="token" required autofocus autocomplete="off" inputmode="numeric"
+             placeholder="000 000" class="campo-codigo">
+    </label>
+    <button type="submit">Entrar</button>
+  </form>
+  <p class="muted small">O código é pessoal e intransferível. Esqueceu? Procure a secretaria da escola.</p>
+</div>
+{% endblock %}

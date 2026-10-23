@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Arquivo Morto · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+<div class="panel-header" style="margin-bottom:16px;">
+  <h1>Arquivo Morto</h1>
+  <div style="display:flex; gap:10px;">
+    <a class="button-outline" href="{{ url_for('arquivo_morto.novo') }}">Novo registro</a>
+    <a class="button" href="{{ url_for('arquivo_morto.importar') }}">Importar planilha</a>
+  </div>
+</div>
+<p class="muted">Registro permanente de todo aluno que já passou pela escola, organizado por letra. Aluno
+  marcado como transferido entra aqui automaticamente, no fim da letra correspondente.</p>
+
+<form method="get" class="busca-wrap busca-arquivo-morto">
+  <label>Nome
+    <input type="search" name="q" value="{{ busca }}" placeholder="Buscar pelo nome..." data-sugestoes="arquivo_morto">
+  </label>
+  <label>Data de nascimento
+    <input type="date" name="nascimento" value="{{ nascimento }}">
+  </label>
+  <button type="submit">Buscar</button>
+  {% if filtrando %}<a class="button-outline" href="{{ url_for('arquivo_morto.index') }}">Limpar</a>{% endif %}
+</form>
+{% if filtrando %}
+<p class="muted small" style="margin:-8px 0 14px;">{{ total_encontrados }} registro(s) encontrado(s)
+  {%- if busca %} com "{{ busca }}" no nome{% endif %}
+  {%- if nascimento %}{{ ' e' if busca }} nascido(s) em {{ formatar_data(nascimento) }}{% endif %}.</p>
+{% endif %}
+
+{% for letra in letras %}
+{% set lista = por_letra[letra] %}
+<details class="turno-gaveta" id="letra-{{ letra }}" {% if filtrando and lista %}open{% endif %} {% if filtrando and not lista %}style="display:none;"{% endif %}>
+  <summary>
+    <span class="turno-gaveta-nome">{{ letra }}</span>
+    <span class="muted small">{{ lista|length }} registro(s)</span>
+  </summary>
+  <div class="turno-gaveta-conteudo">
+    {% if lista %}
+    <div style="overflow-x:auto;">
+      <table class="tabela-notas">
+        <thead>
+          <tr><th scope="col">Nº</th><th scope="col">Nome</th><th scope="col">Data de nascimento</th><th scope="col"></th></tr>
+        </thead>
+        <tbody>
+          {% for r in lista %}
+          {% if not (r['nome'] or '')|trim %}
+          <tr class="registro-liberado">
+            <td>{{ r['numero'] or '—' }}</td>
+            <td colspan="3" class="muted"><em>Número liberado: o próximo aluno da letra {{ letra }} entra aqui.</em></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td>{{ r['numero'] or '—' }}</td>
+            <td>{{ r['nome'] }}
+              {% if r['origem'] == 'transferencia' %}<span class="badge badge-muted">transferido</span>
+              {% elif r['origem'] == 'manual' %}<span class="badge badge-muted">manual</span>{% endif %}
+            </td>
+            <td>{{ formatar_data(r['data_nascimento']) }}</td>
+            <td><div class="acoes-arquivo-morto">
+              {% if r['student_id'] %}
+              <a class="button-outline" href="{{ url_for('staff.aluno_detail', student_id=r['student_id']) }}" style="padding:4px 10px; font-size:.8rem;">Ver aluno</a>
+              {% endif %}
+              <form method="post" action="{{ url_for('arquivo_morto.liberar', registro_id=r['id']) }}"
+                    onsubmit='return confirm({{ ("Liberar o nº " ~ (r["numero"] or "") ~ " da letra " ~ letra ~ "?\n\n" ~ r["nome"] ~ " sai do Arquivo Morto (use para registro duplicado) e o próximo aluno da letra " ~ letra ~ " ocupa este número.")|tojson }});'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="button-outline botao-liberar" title="Deixar em branco (ex: aluno duplicado); o próximo aluno da letra {{ letra }} ocupa este número">Liberar nº</button>
+              </form>
+            </div></td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted small">Nenhum registro nessa letra ainda.</p>
+    {% endif %}
+  </div>
+</details>
+{% endfor %}
+{% endblock %}

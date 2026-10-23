@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Área do aluno · {{ aluno['nome_social'] or aluno['nome'] }} · Sistema Escolar{% endblock %}
+{% block content %}
+<header class="responsavel-topo">
+  <span class="responsavel-escola">{{ escola['nome'] }}</span>
+  <div class="responsavel-topo-acoes nao-imprimir">
+    <a class="button-outline" href="{{ url_for('guardian.boletim_pdf') }}" target="_blank" rel="noopener"
+       title="Todos os bimestres lançados num único arquivo PDF">Imprimir boletim (PDF)</a>
+    <a class="button-outline" href="{{ url_for('guardian.sair') }}">Sair</a>
+  </div>
+</header>
+
+<div class="aluno-header responsavel-aluno">
+  <div class="foto-wrap grande">
+    {% if aluno['foto_path'] %}
+      <img src="{{ url_for('staff.foto', filename=aluno['foto_path']) }}" alt="Foto de {{ aluno['nome_social'] or aluno['nome'] }}">
+    {% else %}
+      <div class="foto-placeholder">{{ (aluno['nome_social'] or aluno['nome'])[0] }}</div>
+    {% endif %}
+  </div>
+  <div>
+    <h1>{{ aluno['nome_social'] or aluno['nome'] }}</h1>
+    <p class="muted">Turma {{ aluno['turma'] }} · {{ aluno['serie'] }}</p>
+  </div>
+</div>
+
+{% if aluno['alteracoes_pendentes'] %}
+<section class="panel panel-aee">
+  <div class="panel-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="icone-caixa" style="background: var(--amarelo-bg); color: var(--amarelo-texto);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4m0 4h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+      </span>
+      <h2>Pendências cadastrais</h2>
+    </div>
+  </div>
+  <p style="white-space:pre-line;">{{ aluno['alteracoes_pendentes'] }}</p>
+  <p class="muted small">Procure a secretaria da escola para regularizar.</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Boletim</h2>
+  {% if boletim %}
+    {% include "_boletim_bimestres.html" %}
+  {% else %}
+    <p class="muted">Ainda não há notas lançadas para este aluno.</p>
+  {% endif %}
+</section>
+
+{% if aluno['recomendacoes'] %}
+<section class="panel">
+  <h2>Recomendações gerais da escola</h2>
+  <p style="white-space:pre-line;">{{ aluno['recomendacoes'] }}</p>
+</section>
+{% endif %}
+
+{% if cursos %}
+<section class="panel nao-imprimir">
+  <h2>Cursos gratuitos recomendados</h2>
+  <p class="muted small">Selecionados para o ciclo atual do aluno ({{ ciclo }}).</p>
+  <div class="grid-cards" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+    {% for curso in cursos %}
+    <div class="card" style="padding:16px; text-align:left;">
+      <strong>{% if curso['url'] %}<a href="{{ curso['url'] }}" target="_blank" rel="noopener">{{ curso['titulo'] }}</a>{% else %}{{ curso['titulo'] }}{% endif %}</strong>
+      {% if curso['descricao'] %}<p class="muted small" style="margin:6px 0;">{{ curso['descricao'] }}</p>{% endif %}
+      {% if curso['fonte'] %}<p class="muted small" style="margin:6px 0;">Fonte: {{ curso['fonte'] }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="panel responsavel-contato">
+  <h2>Fale com a escola</h2>
+  <p><strong>{{ escola['nome'] }}</strong><br>
+    {{ escola['endereco'] }}<br>
+    Secretaria: <a href="tel:{{ escola['telefone']|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}">{{ escola['telefone'] }}</a></p>
+  <p class="muted small">Dúvidas sobre notas, faltas ou pendências: procure a secretaria.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Ordem do menu lateral · Sistema Escolar{% endblock %}
+
+{% macro botoes(campo, valor, rotulo, primeiro, ultimo) %}
+<div class="item-ordenavel-botoes">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+    <input type="hidden" name="direcao" value="subir">
+    <button type="submit" class="button-outline" {% if primeiro %}disabled{% endif %} aria-label="Mover {{ rotulo }} para cima">↑</button>
+  </form>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+    <input type="hidden" name="direcao" value="descer">
+    <button type="submit" class="button-outline" {% if ultimo %}disabled{% endif %} aria-label="Mover {{ rotulo }} para baixo">↓</button>
+  </form>
+</div>
+{% endmacro %}
+
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+<h1>Ordem do menu lateral</h1>
+<p class="muted">Muda a ordem do menu para todo mundo que usa o sistema. Não é uma preferência pessoal.
+  Dá para mover as <strong>categorias</strong> inteiras e os <strong>itens dentro de cada categoria</strong>.
+  "Início" fica sempre no topo, e as importações de notas e de alunos ficam no menu da conta (no seu nome, no topo da tela).</p>
+
+{% for grupo, itens in grupos %}
+{% set g_primeiro, g_ultimo = loop.first, loop.last %}
+<section class="panel grupo-ordenavel">
+  <div class="grupo-ordenavel-topo">
+    <h2>{{ grupo['rotulo'] }}</h2>
+    {{ botoes('grupo', grupo['id'], 'a categoria ' ~ grupo['rotulo'], g_primeiro, g_ultimo) }}
+  </div>
+  <ul class="lista-ordenavel">
+    {% for id, rotulo in itens %}
+    <li class="item-ordenavel">
+      <span class="item-ordenavel-nome">{{ rotulo }}</span>
+      {{ botoes('item', id, rotulo, loop.first, loop.last) }}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% endblock %}

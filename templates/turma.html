@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Turma {{ turma }} · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Turmas</a>
+<div class="panel-header" style="border-bottom:none; margin-bottom:8px;">
+  <h1>Turma {{ turma }}</h1>
+  {% if user['papel'] in ('admin', 'secretaria') %}
+  <a class="button" href="{{ url_for('staff.novo_aluno', turma=turma) }}">+ Novo aluno nesta turma</a>
+  {% endif %}
+</div>
+
+
+{% if bimestres_lancados %}
+<div class="panel boletins-turma">
+  <div>
+    <strong>Boletins da turma · {{ ano_letivo }}</strong>
+    <p class="muted small">Uma folha por aluno com todos os bimestres do ano, no formato do boletim do SGP.</p>
+  </div>
+  <a class="button" href="{{ url_for('staff.boletins_turma_pdf', turma=turma) }}" target="_blank" rel="noopener">Imprimir boletins (PDF)</a>
+</div>
+{% endif %}
+
+<div class="busca-wrap">
+  <label for="busca-aluno" class="sr-only">Buscar aluno pelo nome</label>
+  <input type="search" id="busca-aluno" placeholder="Buscar aluno pelo nome…"
+         autocomplete="off" data-turma="{{ turma }}">
+  <p id="busca-status" class="muted small" role="status" aria-live="polite"></p>
+</div>
+
+<div class="grid-cards" id="lista-alunos">
+  {% for a in alunos %}
+  <a class="card aluno-card {% if a['situacao'] != 'ATIVO' %}inativo{% endif %}" href="{{ url_for('staff.aluno_detail', student_id=a['id']) }}">
+    <div class="foto-wrap">
+      {% if a['foto_path'] %}
+        <img src="{{ url_for('staff.foto', filename=a['foto_path']) }}" alt="Foto de {{ a['nome_social'] or a['nome'] }}">
+      {% else %}
+        <div class="foto-placeholder" role="img" aria-label="Sem foto cadastrada">{{ (a['nome_social'] or a['nome'])[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="aluno-nome">{{ a['nome_social'] or a['nome'] }}</div>
+    {% if a['aee'] %}<span class="badge badge-aee" title="Aluno público-alvo da Educação Especial (AEE)">AEE</span>{% endif %}
+    {% if a['situacao'] != 'ATIVO' %}<span class="badge badge-muted">{{ a['situacao'] }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<section class="panel" id="painel-estatisticas">
+  <h2>Estatísticas da turma</h2>
+  <div id="estatisticas-corpo" class="muted">Carregando estatísticas…</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/turma.js') }}" defer></script>
+{% endblock %}

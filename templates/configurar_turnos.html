@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Configurar turnos · Sistema Escolar{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('staff.dashboard') }}">&larr; Início</a>
+<h1>Configurar turnos</h1>
+<p class="muted">Define em qual turno cada turma aparece no painel principal (Manhã / Integral / Tarde).
+  Turma sem turno definido some de nenhum lugar — só aparece separada, em "Turno não definido".</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <table class="tabela-notas">
+    <thead><tr><th scope="col">Turma</th><th scope="col">Alunos</th><th scope="col">Turno</th></tr></thead>
+    <tbody>
+      {% for t in turmas %}
+      <tr>
+        <td>
+          {{ t['turma'] }}
+          <input type="hidden" name="turma" value="{{ t['turma'] }}">
+        </td>
+        <td>{{ t['total'] }}</td>
+        <td>
+          <select name="turno::{{ t['turma'] }}">
+            <option value="" {% if not t['turno'] %}selected{% endif %}>— não definido —</option>
+            {% for turno in ordem_turnos %}
+            <option value="{{ turno }}" {% if t['turno'] == turno %}selected{% endif %}>{{ turno }}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit" class="button-grande" style="margin-top:16px;">Salvar</button>
+</form>
+{% endblock %}

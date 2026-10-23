@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sistema Escolar{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+  {% if user %}
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+      <a class="sidebar-logo" href="{{ url_for('staff.dashboard') }}" aria-label="Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
+      </a>
+      <label class="sidebar-busca" title="Buscar no menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="busca-menu" placeholder="Buscar no menu" aria-label="Buscar no menu" autocomplete="off" aria-controls="sidebar-nav">
+      </label>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        {% macro item_menu(item) -%}
+        <a href="{{ item['url'] }}" class="sidebar-icon{% if item['ativo'] %} ativo{% endif %}" title="{{ item['rotulo'] }}" aria-label="{{ item['titulo'] }}"{% if item['ativo'] %} aria-current="page"{% endif %} data-menu-item>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{{ item['icone']|safe }}</svg>
+          <span class="sidebar-label">{{ item['rotulo'] }}</span>
+        </a>
+        {%- endmacro %}
+        {{ item_menu(menu['inicio']) }}
+        {% for grupo in menu['grupos'] %}
+        <div class="sidebar-grupo recolhido{% if grupo['ativo'] %} contem-ativo{% endif %}" data-grupo="{{ grupo['id'] }}">
+          <button type="button" class="sidebar-grupo-titulo" aria-expanded="false" aria-controls="menu-grupo-{{ grupo['id'] }}">
+            <span class="sidebar-grupo-nome">{{ grupo['rotulo'] }}</span>
+            <svg class="sidebar-grupo-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="sidebar-grupo-itens" id="menu-grupo-{{ grupo['id'] }}">
+            {% for item in grupo['itens'] %}{{ item_menu(item) }}{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+        <p class="sidebar-sem-resultado" hidden>Nenhuma opção encontrada.</p>
+      </nav>
+      <a href="{{ url_for('staff.logout') }}" class="sidebar-icon sidebar-sair" title="Sair" aria-label="Sair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span class="sidebar-label">Sair</span>
+      </a>
+    </aside>
+    <div class="sidebar-fundo" id="sidebar-fundo" hidden></div>
+
+    <div class="area-principal">
+      <header class="topbar">
+        <div class="topbar-esquerda">
+        <button type="button" class="menu-botao" id="botao-menu" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="conta-wrap">
+          <button type="button" class="conta-botao" id="botao-conta" aria-haspopup="true" aria-expanded="false">
+            <span class="avatar">{{ user['nome'][0] }}</span>
+            <span class="conta-texto">
+              <strong>{{ user['nome'] }}</strong>
+              <small>{{ user['setor'] or user['papel'] }}</small>
+            </span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="conta-menu" id="menu-conta" hidden>
+            <span class="conta-menu-titulo">Minha conta</span>
+            <a href="{{ url_for('staff.alterar_senha') }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              Senha e e-mail
+            </a>
+            {% if menu['conta'] %}
+            <span class="conta-menu-titulo">Importações</span>
+            {% for item in menu['conta'] %}
+            <a href="{{ item['url'] }}"{% if item['ativo'] %} aria-current="page"{% endif %}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{{ item['icone']|safe }}</svg>
+              {{ item['rotulo'] }}
+            </a>
+            {% endfor %}
+            <span class="conta-menu-titulo">Configurações</span>
+            {% endif %}
+            {% if user['papel'] == 'admin' %}
+            <a href="{{ url_for('staff.usuarios') }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Usuários da equipe
+            </a>
+            <a href="{{ url_for('staff.ordenar_sidebar') }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7 5 4 2 7M5 4v16"/><path d="M16 17l3 3 3-3M19 20V4"/></svg>
+              Ordem do menu lateral
+            </a>
+            {% endif %}
+            <a href="{{ url_for('staff.logout') }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+              Sair
+            </a>
+          </div>
+        </div>
+        </div>
+        <span class="topbar-marca">Sistema Escolar</span>
+      </header>
+
+      {% block hero %}{% endblock %}
+
+      <main class="container {% block container_class %}{% endblock %}" id="conteudo">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack" role="status" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="footer">Ano letivo {{ ano_letivo }} · Sistema Escolar</footer>
+    </div>
+  </div>
+  {% else %}
+  <main class="container-solo" id="conteudo">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack" role="status" aria-live="polite">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {{ self.content() }}
+  </main>
+  <footer class="footer">Ano letivo {{ ano_letivo }} · Sistema Escolar</footer>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/easter_egg.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/autocompletar.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
