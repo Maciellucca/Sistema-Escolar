@@ -1,0 +1,38 @@
+# Deploy no Render.com — veja o passo a passo completo em INICIO_RAPIDO.md
+#
+# Plano gratuito: o disco do servidor é apagado a cada reinício, então o
+# banco de dados (e as fotos, que ficam dentro dele) mora num MySQL na nuvem
+# — preencha MYSQL_URL no painel do Render (seção "MySQL gratuito na nuvem"
+# do INICIO_RAPIDO.md).
+services:
+  - type: web
+    name: projeto-sistema-escolar
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # --preload: o banco é preparado uma vez só, antes de abrir os workers
+    startCommand: gunicorn app:app --preload --workers 2 --bind 0.0.0.0:$PORT --timeout 300
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_SETUP_KEY
+        generateValue: true
+      - key: ESCOLA_FORCE_HTTPS
+        value: "1"
+      - key: ESCOLA_ANO_LETIVO
+        value: "2026"
+      # Banco MySQL na nuvem (ex: Aiven): cole a "Service URI" do painel,
+      # algo como mysql://avnadmin:SENHA@HOST:PORTA/defaultdb?ssl-mode=REQUIRED
+      - key: MYSQL_URL
+        sync: false
+      # "Esqueci minha senha" — preencha no painel do Render (veja INICIO_RAPIDO.md)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false

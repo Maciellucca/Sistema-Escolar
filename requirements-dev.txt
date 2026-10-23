@@ -1,0 +1,7 @@
+# Dependências apenas para desenvolvimento/testes — não são necessárias em produção.
+# (reportlab já vem de requirements.txt — usado em produção pela Declaração de
+# Matrícula, não só nos scripts fictícios de teste)
+-r requirements.txt
+pytest>=8.0,<9.0
+beautifulsoup4>=4.12,<5.0
+Pillow>=10.0,<11.0
