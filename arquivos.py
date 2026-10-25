@@ -1,17 +1,6 @@
 """
 Arquivos enviados pela equipe (fotos dos alunos e fotos dos relatórios
 escolares) guardados DENTRO do banco de dados, na tabela "arquivos".
-
-Em hospedagem gratuita (ex: Render free) o disco do servidor é apagado a
-cada reinício; com os arquivos no banco (MySQL na nuvem), nada se perde.
-A pasta local de cada categoria (PHOTOS_DIR, RELATORIO_FOTOS_DIR) vira só
-um cache: bibliotecas que precisam de um caminho de arquivo (PDF, planilha
-das carteirinhas) usam caminho_local(), que recria o arquivo a partir do
-banco quando ele não está no disco.
-
-Instalações antigas, que têm os arquivos só no disco, continuam
-funcionando: ao ler um arquivo que ainda não está no banco mas existe na
-pasta, ele é copiado para o banco na hora.
 """
 import mimetypes
 from contextlib import nullcontext
@@ -25,8 +14,6 @@ RELATORIOS = "relatorios"
 
 
 def _conexao(db):
-    """Usa a conexão de quem chamou (dentro de uma transação já aberta — no
-    SQLite uma segunda conexão ficaria esperando o lock) ou abre uma."""
     return nullcontext(db) if db is not None else get_db()
 
 
@@ -95,8 +82,6 @@ def existe(categoria, nome):
 
 
 def caminho_local(categoria, nome):
-    """Caminho no disco local (recriado a partir do banco se preciso), ou
-    None se o arquivo não existir."""
     if not nome:
         return None
     try:
@@ -124,8 +109,6 @@ def apagar(categoria, nome, db=None):
 
 
 def apagar_por_prefixo(categoria, prefixo, exceto=None, db=None):
-    """Remove arquivos da categoria cujo nome começa com o prefixo (ex: a foto
-    antiga em .jpg quando o aluno ganha uma .png)."""
     with _conexao(db) as conn:
         nomes = [r["nome"] for r in conn.execute(
             "SELECT nome FROM arquivos WHERE categoria = ? AND nome LIKE ?", (categoria, prefixo + "%")
